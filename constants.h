@@ -1,0 +1,1 @@
+const int numPositions = 195;
