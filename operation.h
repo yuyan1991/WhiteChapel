@@ -8,6 +8,7 @@ int moveCounter;
 int path[maxMoveCount][maxPath][numPositions];
 int pathLength[maxMoveCount][maxPath];
 int totalPath[maxMoveCount];
+int estimatedJackHome[numPositions + 1];
 
 void stuffForJack(int turn) {
     switch (turn) {
@@ -75,7 +76,9 @@ bool validateJackEscapeWay(int way) {
 }
 
 void escapePath(int steps) {
-    
+    for (int step = 0; step < steps; step++) {
+
+    }
 }
 
 void escapeZone() {
@@ -121,20 +124,43 @@ void movingCap() {
 
 }
 
-void chase() {
+bool isBackHome() {
+    return false;
+}
+
+void estimateJackHome(int moveCounter) {
+    // TODO: update estimatedJackHome
+
+    printf("Jack's Home List:");
+    for (int i = 1; i <= numPositions; i++) 
+        if (estimatedJackHome[i] == moveCounter) 
+            printf(" %d", i);
+    printf("\n");
+}
+
+void chase(int turn) {
     while (moveCounter < maxMoveCount) {
         escapingJack();
+        if (isBackHome()) {
+            estimateJackHome(moveCounter);
+            break;
+        }
         movingCap();
         printf("Carriage: %d left, Light: %d left.\n", numCarriage, numLight);
     }
 }
 
+void initialize() {
+    memset(estimatedJackHome, 0, sizeof(estimatedJackHome));
+}
+
 void launchGame() {
+    initialize();
     for (int turn=1; turn<=totalTurn; turn++) {
         printf("%d turn begin:", turn);
         stuffForJack(turn);
         startKilling(turn);
-        chase();
+        chase(turn);
         
         printf("%d turn end.", turn)
     }
