@@ -81,6 +81,12 @@ bool validateJackEscapeWay(int way) {
 void escapeThroughPath(int steps) {
     for (int step = 0; step < steps; step++) {
         moveCounter++;
+        for (int i=0; i < totalPath[moveCounter - 1]; i++) {
+            if (enablePath[moveCounter-1][i]) {
+                
+            }
+        }
+        
     }
 }
 
