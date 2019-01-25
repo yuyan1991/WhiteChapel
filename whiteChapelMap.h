@@ -1,4 +1,5 @@
 #include<iostream>
+#include<cstring>
 #include"constants.h"
 using namespace std;
 
@@ -29,13 +30,15 @@ void readZones(int cur) {
 }
 
 void readMap() {
-    freopen("map.in", "r", stdin);
+    freopen(mapFile, "r", stdin);
     memset(graph, 0, sizeof(graph));
     for (int cur=1;cur<=numPositions;cur++) {
         readPositions(cur);
         readZones(cur);
         // printf("\n");
     }
+    fclose(stdin);
+    freopen(console, "r", stdin);
 }
 
 bool verifyMap() {
