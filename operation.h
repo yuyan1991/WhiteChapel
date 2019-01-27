@@ -5,7 +5,7 @@ using namespace std;
 
 int numCarriage, numLight;
 int moveCounter;
-int path[maxMoveCount][maxPath][numPositions];
+int path[maxMoveCount][maxPath][numSteps];
 int pathLength[maxMoveCount][maxPath];
 bool enablePath[maxMoveCount][maxPath];
 int totalPath[maxMoveCount];

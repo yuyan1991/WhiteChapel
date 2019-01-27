@@ -7,5 +7,6 @@ const char *logFile = "whitechapel.log";
 const int numCap = 5;
 const int numPositions = 195;
 const int totalTurn = 4;
-const int maxPath = 10000;
+const int numSteps = 15;
+const int maxPath = 200000;
 const int maxMoveCount = 15;
