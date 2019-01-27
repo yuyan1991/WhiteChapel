@@ -78,20 +78,35 @@ bool validateJackEscapeWay(int way) {
     return success;
 }
 
+void findAndAddNextPosition(int startPosition, int curPath, int g[][numPositions + 1], int l[]) {
+    for (int i = 0; i < l[startPosition]; i++) {
+        addNewPath(moveCounter, curPath, g[startPosition][i]);
+    }
+}
+
+int getLastPositionFromPath(int move, int curPath) {
+    return path[move][curPath][pathLength[move][curPath] - 1];
+}
+
+void findAndAddNewPossiblePaths(int g[][numPositions + 1], int l[]) {
+    for (int i=0; i < totalPath[moveCounter - 1]; i++) {
+        if (enablePath[moveCounter-1][i]) {
+            int startPosition = getLastPositionFromPath(moveCounter - 1, i);
+            findAndAddNextPosition(startPosition, i, g, l);
+        }
+    }
+}
+
 void escapeThroughPath(int steps) {
     for (int step = 0; step < steps; step++) {
         moveCounter++;
-        for (int i=0; i < totalPath[moveCounter - 1]; i++) {
-            if (enablePath[moveCounter-1][i]) {
-                
-            }
-        }
-        
+        findAndAddNewPossiblePaths(position, numOutPosition);
     }
 }
 
 void escapeThroughZone() {
     moveCounter++;
+    findAndAddNewPossiblePaths(zone, numOutZone);
 }
 
 void useWalking() {
@@ -129,8 +144,34 @@ void escapingJack() {
 
 }
 
-void filterPath(int markedPosition, bool isCorrect) {
+void printPossiblePaths(const char* outFile) {
+    freopen(outFile, "w", stdout);
+    printf("====================================================================\n");
+    printf("The list of possible paths for Jack: \n");
+    int cnt = 0;
+    for (int i=0;i<totalPath[moveCounter];i++) {
+        if (!enablePath[moveCounter][i]) continue;
+        cnt++;
+        for (int j=0;j<pathLength[moveCounter][i]; j++) {
+            printf("%d ", path[moveCounter][i][j]);
+        }
+        printf("\n")
+    }
+    printf("Total %d path(s).\n", cnt);
+    printf("====================================================================\n");
+    freopen(console, "w", stdout);
+}
 
+void filterPath(int markedPosition, bool isCorrect) {
+    for (int i = 0; i < totalPath[moveCounter]; i++) {
+        bool isEnable = !isCorrect;
+        for (int j = 0; j < pathLength[moveCounter][i]; j++)
+            if (path[moveCounter][i][j] == markedPosition) {
+                isEnable = isCorrect;
+                break;
+            }
+        enablePath[moveCounter][i] = isEnable;
+    }
 }
 
 void handleMaybeAnswer() {
@@ -157,6 +198,8 @@ void ask() {
                 handleMaybeAnswer();
                 break;
         }
+        printPossiblePaths(escapingJackPathsFile);
+        printPossiblePaths(console);
     }
 
 }
@@ -166,6 +209,8 @@ void seize() {
 }
 
 void movingCap() {
+    printPossiblePaths(escapingJackPathsFile);
+    printPossiblePaths(console);
     for (int curCap=1;curCap<=numCap;curCap++) {
         int action;
         printf("Hello, Sir #%d! What do you want to do? (1. Ask 2. Seize 3. Quit): ", curCap);
@@ -184,25 +229,33 @@ void movingCap() {
 }
 
 bool isBackHome() {
-    printf("Is Jack back home? (1. Yes, 2. No): ");
-    return false;
+    int x;
+    do {
+        printf("Is Jack back home? (1. Yes, 2. No): ");
+        scanf("%d", &x);
+    } while (x!=1 && x!=2);
+    
+    return x==1;
 }
 
-void printEstimatedJackHome(const char* outFile) {
+void printEstimatedJackHome(int turn, const char* outFile) {
     freopen(outFile, "w", stdout);
     printf("Jack's Home List:");
     for (int i = 1; i <= numPositions; i++) 
-        if (estimatedJackHome[i] == moveCounter) 
+        if (estimatedJackHome[i] == turn) 
             printf(" %d", i);
     printf("\n");
     freopen(console, "w", stdout);
 }
 
-void estimateJackHome(int moveCounter) {
-    // TODO: update estimatedJackHome
+void estimateJackHome(int turn) {
+    for (int i=0;i<totalPath[moveCounter];i++) {
+        int lastPosition = getLastPositionFromPath(moveCounter, i);
+        if (estimatedJackHome[lastPosition] == turn - 1) estimatedJackHome[lastPosition] = turn;
+    }
 
-    printEstimatedJackHome(console);
-    printEstimatedJackHome(estimatedHomeFile);
+    printEstimatedJackHome(turn, console);
+    printEstimatedJackHome(turn, estimatedHomeFile);
 }
 
 void printDisablePath() {
@@ -210,10 +263,12 @@ void printDisablePath() {
 }
 
 void logInvestigation() {
-    printf("What do you want to do? (1. print disable path): ");
+    printf("What do you want to do? (0. quit 1. print disable path): ");
     int option;
     scanf("%d", &option);
     switch (option) {
+        case 0:
+            break;
         case 1:
             printDisablePath();
             break;
@@ -224,7 +279,7 @@ void chase(int turn) {
     while (moveCounter < maxMoveCount) {
         escapingJack();
         if (isBackHome()) {
-            estimateJackHome(moveCounter);
+            estimateJackHome(turn);
             break;
         }
         movingCap();
