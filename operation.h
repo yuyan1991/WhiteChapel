@@ -155,7 +155,7 @@ void printPossiblePaths(const char* outFile) {
         for (int j=0;j<pathLength[moveCounter][i]; j++) {
             printf("%d ", path[moveCounter][i][j]);
         }
-        printf("\n")
+        printf("\n");
     }
     printf("Total %d path(s).\n", cnt);
     printf("====================================================================\n");

@@ -1,6 +1,4 @@
 #include<iostream>
-#include<cstring>
-#include<algorithm>
 #include"operation.h"
 using namespace std;
 
