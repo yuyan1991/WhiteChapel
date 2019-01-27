@@ -164,6 +164,7 @@ void printPossiblePaths(const char* outFile) {
 
 void filterPath(int markedPosition, bool isCorrect) {
     for (int i = 0; i < totalPath[moveCounter]; i++) {
+        if (!enablePath[moveCounter][i]) continue;
         bool isEnable = !isCorrect;
         for (int j = 0; j < pathLength[moveCounter][i]; j++)
             if (path[moveCounter][i][j] == markedPosition) {
@@ -186,7 +187,7 @@ void ask() {
         scanf("%d", &x);
         if (x<=0 || x>numPositions) break;
         printf("Is this position correct? (1. Yes, 2. No, 3. Maybe): ");
-        scanf("%d", answer);
+        scanf("%d", &answer);
         switch (answer) {
             case 1:
                 filterPath(x, true);
@@ -250,6 +251,7 @@ void printEstimatedJackHome(int turn, const char* outFile) {
 
 void estimateJackHome(int turn) {
     for (int i=0;i<totalPath[moveCounter];i++) {
+        if (!enablePath[moveCounter][i]) continue;
         int lastPosition = getLastPositionFromPath(moveCounter, i);
         if (estimatedJackHome[lastPosition] == turn - 1) estimatedJackHome[lastPosition] = turn;
     }
@@ -295,11 +297,11 @@ void initialize() {
 void launchGame() {
     initialize();
     for (int turn=1; turn<=totalTurn; turn++) {
-        printf("%d turn begin:", turn);
+        printf("%d turn begin:\n", turn);
         stuffForJack(turn);
         startKilling(turn);
         chase(turn);
         
-        printf("%d turn end.", turn);
+        printf("%d turn end.\n", turn);
     }
 }
