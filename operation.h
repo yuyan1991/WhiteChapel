@@ -1,15 +1,25 @@
-#include<iostream>
-#include<cstring>
 #include"whiteChapelMap.h"
+#include<algorithm>
 using namespace std;
 
+struct PositionData {
+    int position;
+    int occurrenceCount;
+};
 int numCarriage, numLight;
 int moveCounter;
 int path[maxMoveCount][maxPath][numSteps];
 int pathLength[maxMoveCount][maxPath];
 bool enablePath[maxMoveCount][maxPath];
 int totalPath[maxMoveCount];
+int validTotalPath[maxMoveCount];
+int occurrenceCount[numPositions + 1];
+int lastOccurrenceCount[numPositions + 1];
+int mustAppearPositions[numPositions];
+int mustAppearPositionsCount;
 int estimatedJackHome[numPositions + 1];
+PositionData positionsMax[numPositions + 1];
+PositionData positionsLastMax[numPositions + 1];
 
 void stuffForJack(int turn) {
     switch (turn) {
@@ -50,6 +60,7 @@ void addNewPath(int moveCounter, int prevPath, int currentPosition) {
 void startKilling(int curTurn) {
     moveCounter = 1;
     memset(totalPath,0, sizeof(totalPath));
+    memset(occurrenceCount, 0, sizeof(occurrenceCount));
     int deathPosition;
     printf("Please enter the death position: ");
     scanf("%d", &deathPosition);
@@ -97,16 +108,26 @@ void findAndAddNewPossiblePaths(int g[][numPositions + 1], int l[]) {
     }
 }
 
+void calculateValidTotalPath() {
+    validTotalPath[moveCounter] = 0;
+    for (int i=0;i<totalPath[moveCounter];i++) {
+        if (!enablePath[moveCounter][i]) continue;
+        validTotalPath[moveCounter]++;
+    }
+}
+
 void escapeThroughPath(int steps) {
     for (int step = 0; step < steps; step++) {
         moveCounter++;
         findAndAddNewPossiblePaths(position, numOutPosition);
+        calculateValidTotalPath();
     }
 }
 
 void escapeThroughZone() {
     moveCounter++;
     findAndAddNewPossiblePaths(zone, numOutZone);
+    calculateValidTotalPath();
 }
 
 void useWalking() {
@@ -141,25 +162,73 @@ void escapingJack() {
             useLight();
             break;
     }
-
 }
 
 void printPossiblePaths(const char* outFile) {
     freopen(outFile, "w", stdout);
     printf("====================================================================\n");
     printf("The list of possible paths for Jack: \n");
-    int cnt = 0;
+
     for (int i=0;i<totalPath[moveCounter];i++) {
         if (!enablePath[moveCounter][i]) continue;
-        cnt++;
         for (int j=0;j<pathLength[moveCounter][i]; j++) {
             printf("%d ", path[moveCounter][i][j]);
         }
         printf("\n");
     }
-    printf("Total %d path(s).\n", cnt);
+    printf("Total %d path(s).\n", validTotalPath[moveCounter]);
     printf("====================================================================\n");
     freopen(console, "w", stdout);
+}
+
+void calculateOccurrenceCount() {
+    memset(occurrenceCount, 0, sizeof(occurrenceCount));
+    int vis[numPositions + 1];
+    for (int i = 0; i < totalPath[moveCounter]; i++) {
+        if (!enablePath[moveCounter][i]) continue;
+        memset(vis, 0, sizeof(vis));
+        for (int j = 0; j < pathLength[moveCounter][i]; j++) {
+            int position = path[moveCounter][i][j];
+            vis[position]++;
+        }
+        for (int k = 1; k <= numPositions; k++) occurrenceCount[k] += (vis[k]>0?1:0);
+    }
+}
+
+void calculateLastOccurrenceCount() {
+    memset(lastOccurrenceCount, 0, sizeof(lastOccurrenceCount));
+    int vis[numPositions + 1];
+    for (int i = 0; i < totalPath[moveCounter]; i++) {
+        if (!enablePath[moveCounter][i]) continue;
+        int position = getLastPositionFromPath(moveCounter, i);
+        lastOccurrenceCount[position]++;
+    }
+}
+
+void checkMustAppearPositions() {
+    mustAppearPositionsCount = 0;
+    for (int i = 1; i <= numPositions; i++) {
+        if (occurrenceCount[i] == validTotalPath[moveCounter]) {
+            mustAppearPositions[mustAppearPositionsCount++] = i;
+        }
+    }
+}
+
+void printMustAppearPositions(const char* outFile) {
+    freopen(outFile, "w", stdout);
+    printf("====================================================================\n");
+    printf("Must appear positions list:");
+    for (int i = 0; i < mustAppearPositionsCount; i++) 
+        printf(" %d", mustAppearPositions[i]);
+    printf("\n");
+    printf("====================================================================\n");
+    freopen(console, "w", stdout);
+}
+
+void checkAndPrintMustAppearPositions() {
+    checkMustAppearPositions();
+    printMustAppearPositions(mustAppearPositionsFile);
+    printMustAppearPositions(console);
 }
 
 void filterPath(int markedPosition, bool isCorrect) {
@@ -173,11 +242,70 @@ void filterPath(int markedPosition, bool isCorrect) {
             }
         enablePath[moveCounter][i] = isEnable;
     }
+    calculateValidTotalPath();
 }
 
 void handleMaybeAnswer() {
     // TODO
     // Assume nothing to do at present
+}
+
+void printMaxOccurrencePositions(const char *outFile) {
+    freopen(outFile, "w", stdout);
+    printf("====================================================================\n");
+    printf("Max Occurrence List:\n");
+    for (int i = 1; i <= numPositions; i++) {
+        if (positionsMax[i].occurrenceCount > 0 && occurrenceCount[positionsMax[i].position] < validTotalPath[moveCounter]) {
+            printf("%d occurs: %d\n", positionsMax[i].position, positionsMax[i].occurrenceCount);
+        }
+    }
+    printf("====================================================================\n");
+    freopen(console, "w", stdout);
+}
+
+bool positionsOccurrenceOrderByDesc(PositionData p1, PositionData p2) {
+    return p1.occurrenceCount > p2.occurrenceCount;
+}
+
+void checkMaxOccurrencePositions() {
+    for (int i = 1; i <= numPositions; i++) {
+        positionsMax[i].position = i;
+        positionsMax[i].occurrenceCount = occurrenceCount[i];
+    }
+    sort(positionsMax + 1, positionsMax + numPositions + 1, positionsOccurrenceOrderByDesc);
+    printMaxOccurrencePositions(maxOccurrecePositionsFile);
+    printMaxOccurrencePositions(console);
+}
+
+void printMaxLastOccurrencePositions(const char *outFile) {
+    freopen(outFile, "w", stdout);
+    printf("====================================================================\n");
+    printf("Max Last Occurrence List:\n");
+    for (int i = 1; i <= numPositions; i++) {
+        if (positionsLastMax[i].occurrenceCount > 0 && occurrenceCount[positionsLastMax[i].position] < validTotalPath[moveCounter]) {
+            printf("%d occurs: %d\n", positionsLastMax[i].position, positionsLastMax[i].occurrenceCount);
+        }
+    }
+    printf("====================================================================\n");
+    freopen(console, "w", stdout);
+}
+
+void checkMaxLastOccurrencePositions() {
+    for (int i = 1; i <= numPositions; i++) {
+        positionsLastMax[i].position = i;
+        positionsLastMax[i].occurrenceCount = lastOccurrenceCount[i];
+    }
+    sort(positionsLastMax + 1, positionsLastMax + numPositions + 1, positionsOccurrenceOrderByDesc);
+    printMaxLastOccurrencePositions(maxLastOccurrecePositionsFile);
+    printMaxLastOccurrencePositions(console);
+}
+
+void massageStatistics() {
+    calculateOccurrenceCount();
+    calculateLastOccurrenceCount();
+    checkAndPrintMustAppearPositions();
+    checkMaxOccurrencePositions();
+    checkMaxLastOccurrencePositions();
 }
 
 void ask() {
@@ -200,7 +328,7 @@ void ask() {
                 break;
         }
         printPossiblePaths(escapingJackPathsFile);
-        printPossiblePaths(console);
+        massageStatistics();
     }
 
 }
@@ -211,7 +339,8 @@ void seize() {
 
 void movingCap() {
     printPossiblePaths(escapingJackPathsFile);
-    printPossiblePaths(console);
+    massageStatistics();
+
     for (int curCap=1;curCap<=numCap;curCap++) {
         int action;
         printf("Hello, Sir #%d! What do you want to do? (1. Ask 2. Seize 3. Quit): ", curCap);
