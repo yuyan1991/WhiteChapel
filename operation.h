@@ -333,8 +333,33 @@ void ask() {
 
 }
 
+void filterPathContainSeizePositionInLastOccurrence(int position) {
+    for (int i = 0; i < totalPath[moveCounter]; i++) {
+        if (!enablePath[moveCounter][i]) continue;
+        int lastOccurrence = getLastPositionFromPath(moveCounter, i);
+        enablePath[moveCounter][i] = (lastOccurrence != position);
+    }
+    calculateValidTotalPath();
+}
+
 void seize() {
-    // Seems nothing to do at present
+    int x, answer;
+    printf("Enter a position you wanna seize: ");
+    scanf("%d", &x);
+    printf("Is this position correct? (1. Yes, 2. No): ");
+    scanf("%d", &answer);
+    switch (answer) {
+        case 1:
+            printf("Congratulations!\n");
+            system("pause");
+            exit(0);
+            break;
+        case 2:
+            filterPathContainSeizePositionInLastOccurrence(x);
+            break;
+    }
+    printPossiblePaths(escapingJackPathsFile);
+    massageStatistics();
 }
 
 void movingCap() {
