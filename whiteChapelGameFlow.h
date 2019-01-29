@@ -60,7 +60,8 @@ void escapingJack() {
 
 void ask() {
     int x, answer;
-    while (true) {
+    bool detected = false;
+    while (!detected) {
         printf("Enter a position you wanna ask (or enter 0 to quit): ");
         scanf("%d", &x);
         if (x<=0 || x>numPositions) break;
@@ -69,6 +70,7 @@ void ask() {
         switch (answer) {
             case 1:
                 filterPath(x, true);
+                detected = true;
                 break;
             case 2:
                 filterPath(x, false);
