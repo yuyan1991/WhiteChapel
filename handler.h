@@ -21,25 +21,8 @@ int estimatedJackHome[numPositions + 1];
 PositionData positionsMax[numPositions + 1];
 PositionData positionsLastMax[numPositions + 1];
 
-void stuffForJack(int turn) {
-    switch (turn) {
-        case 1:
-            numCarriage = 3;
-            numLight = 2;
-            break;
-        case 2:
-            numCarriage = 2;
-            numLight = 2;
-            break;
-        case 3:
-            numCarriage = 2;
-            numLight = 1;
-            break;
-        case 4:
-            numCarriage = 1;
-            numLight = 1;
-            break;
-    }
+int getLastPositionFromPath(int move, int curPath) {
+    return path[move][curPath][pathLength[move][curPath] - 1];
 }
 
 void addNewPath(int moveCounter, int prevPath, int currentPosition) {
@@ -55,22 +38,6 @@ void addNewPath(int moveCounter, int prevPath, int currentPosition) {
     enablePath[moveCounter][totalPath[moveCounter]] = true;
     path[moveCounter][totalPath[moveCounter]][pathLength[moveCounter][totalPath[moveCounter]]-1] = currentPosition;
     totalPath[moveCounter]++;
-}
-
-void startKilling(int curTurn) {
-    moveCounter = 1;
-    memset(totalPath,0, sizeof(totalPath));
-    memset(occurrenceCount, 0, sizeof(occurrenceCount));
-    int deathPosition;
-    printf("Please enter the death position: ");
-    scanf("%d", &deathPosition);
-    addNewPath(moveCounter, -1, deathPosition);
-
-    if (curTurn == 3) {
-        printf("Please enter another death position: ");
-        scanf("%d", &deathPosition);
-        addNewPath(moveCounter, -1, deathPosition);
-    }
 }
 
 bool validateJackEscapeWay(int way) {
@@ -93,10 +60,6 @@ void findAndAddNextPosition(int startPosition, int curPath, int g[][numPositions
     for (int i = 0; i < l[startPosition]; i++) {
         addNewPath(moveCounter, curPath, g[startPosition][i]);
     }
-}
-
-int getLastPositionFromPath(int move, int curPath) {
-    return path[move][curPath][pathLength[move][curPath] - 1];
 }
 
 void findAndAddNewPossiblePaths(int g[][numPositions + 1], int l[]) {
@@ -142,26 +105,6 @@ void useCarriage() {
 void useLight() {
     numLight--;
     escapeThroughZone();
-}
-
-void escapingJack() {
-    int way;
-    do {
-        printf("Which way would Jack pick to escape? (1. walking 2. carriage 3. light): ");
-        scanf("%d", &way);
-    } while (!validateJackEscapeWay(way));
-
-    switch (way) {
-        case 1:
-            useWalking();
-            break;
-        case 2:
-            useCarriage();
-            break;
-        case 3:
-            useLight();
-            break;
-    }
 }
 
 void printPossiblePaths(const char* outFile) {
@@ -250,6 +193,10 @@ void handleMaybeAnswer() {
     // Assume nothing to do at present
 }
 
+bool positionsOccurrenceOrderByDesc(PositionData p1, PositionData p2) {
+    return p1.occurrenceCount > p2.occurrenceCount;
+}
+
 void printMaxOccurrencePositions(const char *outFile) {
     freopen(outFile, "w", stdout);
     printf("====================================================================\n");
@@ -261,10 +208,6 @@ void printMaxOccurrencePositions(const char *outFile) {
     }
     printf("====================================================================\n");
     freopen(console, "w", stdout);
-}
-
-bool positionsOccurrenceOrderByDesc(PositionData p1, PositionData p2) {
-    return p1.occurrenceCount > p2.occurrenceCount;
 }
 
 void checkMaxOccurrencePositions() {
@@ -308,31 +251,6 @@ void massageStatistics() {
     checkMaxLastOccurrencePositions();
 }
 
-void ask() {
-    int x, answer;
-    while (true) {
-        printf("Enter a position you wanna ask (or enter 0 to quit): ");
-        scanf("%d", &x);
-        if (x<=0 || x>numPositions) break;
-        printf("Is this position correct? (1. Yes, 2. No, 3. Maybe): ");
-        scanf("%d", &answer);
-        switch (answer) {
-            case 1:
-                filterPath(x, true);
-                break;
-            case 2:
-                filterPath(x, false);
-                break;
-            case 3:
-                handleMaybeAnswer();
-                break;
-        }
-        printPossiblePaths(escapingJackPathsFile);
-        massageStatistics();
-    }
-
-}
-
 void filterPathContainSeizePositionInLastOccurrence(int position) {
     for (int i = 0; i < totalPath[moveCounter]; i++) {
         if (!enablePath[moveCounter][i]) continue;
@@ -340,47 +258,6 @@ void filterPathContainSeizePositionInLastOccurrence(int position) {
         enablePath[moveCounter][i] = (lastOccurrence != position);
     }
     calculateValidTotalPath();
-}
-
-void seize() {
-    int x, answer;
-    printf("Enter a position you wanna seize: ");
-    scanf("%d", &x);
-    printf("Is this position correct? (1. Yes, 2. No): ");
-    scanf("%d", &answer);
-    switch (answer) {
-        case 1:
-            printf("Congratulations!\n");
-            system("pause");
-            exit(0);
-            break;
-        case 2:
-            filterPathContainSeizePositionInLastOccurrence(x);
-            break;
-    }
-    printPossiblePaths(escapingJackPathsFile);
-    massageStatistics();
-}
-
-void movingCap() {
-    printPossiblePaths(escapingJackPathsFile);
-    massageStatistics();
-
-    for (int curCap=1;curCap<=numCap;curCap++) {
-        int action;
-        printf("Hello, Sir #%d! What do you want to do? (1. Ask 2. Seize 3. Quit): ", curCap);
-        scanf("%d", &action);
-        switch (action) {
-            case 1:
-                ask();
-                break;
-            case 2:
-                seize();
-                break;
-            case 3:
-                break;
-        }
-    }
 }
 
 bool isBackHome() {
@@ -414,48 +291,16 @@ void estimateJackHome(int turn) {
     printEstimatedJackHome(turn, estimatedHomeFile);
 }
 
-void printDisablePath() {
-    // TODO
-}
-
 void logInvestigation() {
-    printf("What do you want to do? (0. quit 1. print disable path): ");
+    printf("What do you want to do? (0. quit): ");
     int option;
     scanf("%d", &option);
     switch (option) {
         case 0:
             break;
-        case 1:
-            printDisablePath();
-            break;
-    }
-}
-
-void chase(int turn) {
-    while (moveCounter < maxMoveCount) {
-        escapingJack();
-        if (isBackHome()) {
-            estimateJackHome(turn);
-            break;
-        }
-        movingCap();
-        logInvestigation();
-        printf("Carriage: %d left, Light: %d left.\n", numCarriage, numLight);
     }
 }
 
 void initialize() {
     memset(estimatedJackHome, 0, sizeof(estimatedJackHome));
-}
-
-void launchGame() {
-    initialize();
-    for (int turn=1; turn<=totalTurn; turn++) {
-        printf("%d turn begin:\n", turn);
-        stuffForJack(turn);
-        startKilling(turn);
-        chase(turn);
-        
-        printf("%d turn end.\n", turn);
-    }
 }
