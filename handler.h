@@ -18,8 +18,13 @@ int lastOccurrenceCount[numPositions + 1];
 int mustAppearPositions[numPositions];
 int mustAppearPositionsCount;
 int estimatedJackHome[numPositions + 1];
+bool block[numPositions + 1][numPositions + 1];
 PositionData positionsMax[numPositions + 1];
 PositionData positionsLastMax[numPositions + 1];
+
+bool isBlock(int x, int y) {
+    return block[x][y];
+}
 
 int getLastPositionFromPath(int move, int curPath) {
     return path[move][curPath][pathLength[move][curPath] - 1];
@@ -58,7 +63,8 @@ bool validateJackEscapeWay(int way) {
 
 void findAndAddNextPosition(int startPosition, int curPath, int g[][numPositions + 1], int l[]) {
     for (int i = 0; i < l[startPosition]; i++) {
-        addNewPath(moveCounter, curPath, g[startPosition][i]);
+        if (!isBlock(startPosition, g[startPosition][i]))
+            addNewPath(moveCounter, curPath, g[startPosition][i]);
     }
 }
 
@@ -93,16 +99,32 @@ void escapeThroughZone() {
     calculateValidTotalPath();
 }
 
+void addBlockingPairs() {
+    memset(block, 0, sizeof(block));
+    printf("Add blocking pairs: \n");
+    int x, y;
+    while (true) {
+        printf("Please enter the blocking pairs(enter '0 0' to quit): ");
+        scanf("%d%d", &x, &y);
+        if (x == 0 && y == 0) break;
+        if (x>0 && x<= numPositions && y > 0 && y <= numPositions)
+            block[x][y] = block[y][x] = true;
+    }
+}
+
 void useWalking() {
+    addBlockingPairs();
     escapeThroughPath(1);
 }
 
 void useCarriage() {
+    memset(block, 0, sizeof(block));
     numCarriage--;
     escapeThroughPath(2);
 }
 
 void useLight() {
+    memset(block, 0, sizeof(block));
     numLight--;
     escapeThroughZone();
 }
@@ -202,7 +224,8 @@ void printMaxOccurrencePositions(const char *outFile) {
     printf("====================================================================\n");
     printf("Max Occurrence List:\n");
     for (int i = 1; i <= numPositions; i++) {
-        if (positionsMax[i].occurrenceCount > 0 && occurrenceCount[positionsMax[i].position] < validTotalPath[moveCounter]) {
+        if (positionsMax[i].occurrenceCount > 0
+            && occurrenceCount[positionsMax[i].position] < validTotalPath[moveCounter]) {
             printf("%d occurs: %d\n", positionsMax[i].position, positionsMax[i].occurrenceCount);
         }
     }
@@ -225,7 +248,8 @@ void printMaxLastOccurrencePositions(const char *outFile) {
     printf("====================================================================\n");
     printf("Max Last Occurrence List:\n");
     for (int i = 1; i <= numPositions; i++) {
-        if (positionsLastMax[i].occurrenceCount > 0 && occurrenceCount[positionsLastMax[i].position] < validTotalPath[moveCounter]) {
+        if (positionsLastMax[i].occurrenceCount > 0
+            && occurrenceCount[positionsLastMax[i].position] < validTotalPath[moveCounter]) {
             printf("%d occurs: %d\n", positionsLastMax[i].position, positionsLastMax[i].occurrenceCount);
         }
     }
@@ -303,4 +327,5 @@ void logInvestigation() {
 
 void initialize() {
     memset(estimatedJackHome, 0, sizeof(estimatedJackHome));
+    memset(block, 0, sizeof(block));
 }
