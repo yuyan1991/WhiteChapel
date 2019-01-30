@@ -4,8 +4,8 @@ const char *estimatedHomeFile = "estimatedHome.log";
 const char *escapingJackPathsFile = "escapingJackPaths.log";
 const char *logFile = "whitechapel.log";
 const char *mustAppearPositionsFile = "mustAppearPositions.log";
-const char *maxOccurrecePositionsFile = "maxOccurrecePositions.log";
-const char *maxLastOccurrecePositionsFile = "maxLastOccurrecePositionsFile.log";
+const char *maxOccurrencePositionsFile = "maxOccurrencePositions.log";
+const char *maxLastOccurrencePositionsFile = "maxLastOccurrencePositionsFile.log";
 
 const int numCap = 5;
 const int numPositions = 195;

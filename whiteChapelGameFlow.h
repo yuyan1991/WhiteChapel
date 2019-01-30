@@ -146,7 +146,7 @@ void launchGame() {
         stuffForJack(turn);
         startKilling(turn);
         chase(turn);
-        
+
         printf("%d turn end.\n", turn);
     }
 }

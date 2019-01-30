@@ -161,7 +161,7 @@ void printMustAppearPositions(const char* outFile) {
     freopen(outFile, "w", stdout);
     printf("====================================================================\n");
     printf("Must appear positions list:");
-    for (int i = 0; i < mustAppearPositionsCount; i++) 
+    for (int i = 0; i < mustAppearPositionsCount; i++)
         printf(" %d", mustAppearPositions[i]);
     printf("\n");
     printf("====================================================================\n");
@@ -216,7 +216,7 @@ void checkMaxOccurrencePositions() {
         positionsMax[i].occurrenceCount = occurrenceCount[i];
     }
     sort(positionsMax + 1, positionsMax + numPositions + 1, positionsOccurrenceOrderByDesc);
-    printMaxOccurrencePositions(maxOccurrecePositionsFile);
+    printMaxOccurrencePositions(maxOccurrencePositionsFile);
     printMaxOccurrencePositions(console);
 }
 
@@ -239,7 +239,7 @@ void checkMaxLastOccurrencePositions() {
         positionsLastMax[i].occurrenceCount = lastOccurrenceCount[i];
     }
     sort(positionsLastMax + 1, positionsLastMax + numPositions + 1, positionsOccurrenceOrderByDesc);
-    printMaxLastOccurrencePositions(maxLastOccurrecePositionsFile);
+    printMaxLastOccurrencePositions(maxLastOccurrencePositionsFile);
     printMaxLastOccurrencePositions(console);
 }
 
@@ -266,15 +266,15 @@ bool isBackHome() {
         printf("Is Jack back home? (1. Yes, 2. No): ");
         scanf("%d", &x);
     } while (x!=1 && x!=2);
-    
+
     return x==1;
 }
 
 void printEstimatedJackHome(int turn, const char* outFile) {
     freopen(outFile, "w", stdout);
     printf("Jack's Home List:");
-    for (int i = 1; i <= numPositions; i++) 
-        if (estimatedJackHome[i] == turn) 
+    for (int i = 1; i <= numPositions; i++)
+        if (estimatedJackHome[i] == turn)
             printf(" %d", i);
     printf("\n");
     freopen(console, "w", stdout);
