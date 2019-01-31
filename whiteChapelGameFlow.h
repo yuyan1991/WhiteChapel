@@ -79,7 +79,7 @@ void ask() {
                 handleMaybeAnswer();
                 break;
         }
-        printPossiblePaths(escapingJackPathsFile);
+        printPossiblePaths();
         massageStatistics();
     }
 
@@ -101,12 +101,12 @@ void seize() {
             filterPathContainSeizePositionInLastOccurrence(x);
             break;
     }
-    printPossiblePaths(escapingJackPathsFile);
+    printPossiblePaths();
     massageStatistics();
 }
 
 void movingCap() {
-    printPossiblePaths(escapingJackPathsFile);
+    printPossiblePaths();
     massageStatistics();
 
     for (int curCap=1;curCap<=numCap;curCap++) {

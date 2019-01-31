@@ -1,5 +1,6 @@
 #include"whiteChapelMap.h"
 #include<algorithm>
+#include<set>
 using namespace std;
 
 struct PositionData {
@@ -11,8 +12,10 @@ int moveCounter;
 int path[maxMoveCount][maxPath][numSteps];
 int pathLength[maxMoveCount][maxPath];
 bool enablePath[maxMoveCount][maxPath];
+bool isDistinctPath[maxMoveCount][maxPath];
 int totalPath[maxMoveCount];
 int validTotalPath[maxMoveCount];
+int validTotalDistinctPath[maxMoveCount];
 int occurrenceCount[numPositions + 1];
 int lastOccurrenceCount[numPositions + 1];
 int mustAppearPositions[numPositions];
@@ -21,6 +24,18 @@ int estimatedJackHome[numPositions + 1];
 PositionData positionsMax[numPositions + 1];
 PositionData positionsLastMax[numPositions + 1];
 
+bool isDistinctPositionsPath(int moveCounter, int curPath) {
+    if (!isDistinctPath[moveCounter][curPath]) return false;
+    set<int> s;
+    s.clear();
+    for (int i = 0; i < pathLength[moveCounter][curPath]; i++) {
+        int currentPosition = path[moveCounter][curPath][i];
+        if (s.find(currentPosition) != s.end()) return false;
+        s.insert(currentPosition);
+    }
+    return true;
+}
+
 int getLastPositionFromPath(int move, int curPath) {
     return path[move][curPath][pathLength[move][curPath] - 1];
 }
@@ -28,15 +43,18 @@ int getLastPositionFromPath(int move, int curPath) {
 void addNewPath(int moveCounter, int prevPath, int currentPosition) {
     if (moveCounter == 1) {
         pathLength[moveCounter][totalPath[moveCounter]] = 1;
+        isDistinctPath[moveCounter][totalPath[moveCounter]] = true;
     } else {
         if (!enablePath[moveCounter-1][prevPath]) return;
         pathLength[moveCounter][totalPath[moveCounter]] = pathLength[moveCounter-1][prevPath] + 1;
+        isDistinctPath[moveCounter][totalPath[moveCounter]] = isDistinctPath[moveCounter-1][prevPath];
         for (int i = 0; i < pathLength[moveCounter-1][prevPath]; i++) {
             path[moveCounter][totalPath[moveCounter]][i] = path[moveCounter-1][prevPath][i];
         }
     }
     enablePath[moveCounter][totalPath[moveCounter]] = true;
     path[moveCounter][totalPath[moveCounter]][pathLength[moveCounter][totalPath[moveCounter]]-1] = currentPosition;
+    isDistinctPath[moveCounter][totalPath[moveCounter]] = isDistinctPositionsPath(moveCounter, totalPath[moveCounter]);
     totalPath[moveCounter]++;
 }
 
@@ -71,26 +89,30 @@ void findAndAddNewPossiblePaths(int g[][numPositions + 1], int l[]) {
     }
 }
 
-void calculateValidTotalPath() {
-    validTotalPath[moveCounter] = 0;
+void calculateValidTotalPath(bool distinctRequired) {
+    int cnt = 0;
     for (int i=0;i<totalPath[moveCounter];i++) {
         if (!enablePath[moveCounter][i]) continue;
-        validTotalPath[moveCounter]++;
+        if (distinctRequired && isDistinctPath[moveCounter][i]) continue;
+        cnt++;
     }
+    if (distinctRequired) validTotalDistinctPath[moveCounter] = cnt; else validTotalPath[moveCounter] = cnt;
 }
 
 void escapeThroughPath(int steps) {
     for (int step = 0; step < steps; step++) {
         moveCounter++;
         findAndAddNewPossiblePaths(position, numOutPosition);
-        calculateValidTotalPath();
+        calculateValidTotalPath(false);
+        calculateValidTotalPath(true);
     }
 }
 
 void escapeThroughZone() {
     moveCounter++;
     findAndAddNewPossiblePaths(zone, numOutZone);
-    calculateValidTotalPath();
+    calculateValidTotalPath(false);
+    calculateValidTotalPath(true);
 }
 
 void useWalking() {
@@ -107,28 +129,37 @@ void useLight() {
     escapeThroughZone();
 }
 
-void printPossiblePaths(const char* outFile) {
+void printPossiblePaths(const char* outFile, bool distinctRequired) {
     freopen(outFile, "w", stdout);
     printf("====================================================================\n");
     printf("The list of possible paths for Jack: \n");
 
     for (int i=0;i<totalPath[moveCounter];i++) {
         if (!enablePath[moveCounter][i]) continue;
+        if (distinctRequired && !isDistinctPath[moveCounter][i]) continue;
         for (int j=0;j<pathLength[moveCounter][i]; j++) {
             printf("%d ", path[moveCounter][i][j]);
         }
         printf("\n");
     }
-    printf("Total %d path(s).\n", validTotalPath[moveCounter]);
+    int total = distinctRequired ? validTotalDistinctPath[moveCounter] : validTotalPath[moveCounter];
+
+    printf("Total %d path(s).\n", total);
     printf("====================================================================\n");
     freopen(console, "w", stdout);
 }
 
-void calculateOccurrenceCount() {
+void printPossiblePaths() {
+    printPossiblePaths(escapingJackPathsFile, false);
+    printPossiblePaths(escapingJackDistinctPathsFile, true);
+}
+
+void calculateOccurrenceCount(bool distinctRequired) {
     memset(occurrenceCount, 0, sizeof(occurrenceCount));
     int vis[numPositions + 1];
     for (int i = 0; i < totalPath[moveCounter]; i++) {
         if (!enablePath[moveCounter][i]) continue;
+        if (distinctRequired && !isDistinctPath[moveCounter][i]) continue;
         memset(vis, 0, sizeof(vis));
         for (int j = 0; j < pathLength[moveCounter][i]; j++) {
             int position = path[moveCounter][i][j];
@@ -138,11 +169,12 @@ void calculateOccurrenceCount() {
     }
 }
 
-void calculateLastOccurrenceCount() {
+void calculateLastOccurrenceCount(bool distinctRequired) {
     memset(lastOccurrenceCount, 0, sizeof(lastOccurrenceCount));
     int vis[numPositions + 1];
     for (int i = 0; i < totalPath[moveCounter]; i++) {
         if (!enablePath[moveCounter][i]) continue;
+        if (distinctRequired && !isDistinctPath[moveCounter][i]) continue;
         int position = getLastPositionFromPath(moveCounter, i);
         lastOccurrenceCount[position]++;
     }
@@ -185,7 +217,8 @@ void filterPath(int markedPosition, bool isCorrect) {
             }
         enablePath[moveCounter][i] = isEnable;
     }
-    calculateValidTotalPath();
+    calculateValidTotalPath(false);
+    calculateValidTotalPath(true);
 }
 
 void handleMaybeAnswer() {
@@ -202,7 +235,8 @@ void printMaxOccurrencePositions(const char *outFile) {
     printf("====================================================================\n");
     printf("Max Occurrence List:\n");
     for (int i = 1; i <= numPositions; i++) {
-        if (positionsMax[i].occurrenceCount > 0 && occurrenceCount[positionsMax[i].position] < validTotalPath[moveCounter]) {
+        if (positionsMax[i].occurrenceCount > 0
+            && occurrenceCount[positionsMax[i].position] < validTotalPath[moveCounter]) {
             printf("%d occurs: %d\n", positionsMax[i].position, positionsMax[i].occurrenceCount);
         }
     }
@@ -210,13 +244,14 @@ void printMaxOccurrencePositions(const char *outFile) {
     freopen(console, "w", stdout);
 }
 
-void checkMaxOccurrencePositions() {
+void checkMaxOccurrencePositions(bool distinctRequired) {
     for (int i = 1; i <= numPositions; i++) {
         positionsMax[i].position = i;
         positionsMax[i].occurrenceCount = occurrenceCount[i];
     }
     sort(positionsMax + 1, positionsMax + numPositions + 1, positionsOccurrenceOrderByDesc);
-    printMaxOccurrencePositions(maxOccurrencePositionsFile);
+    const char *logFile = distinctRequired ? distinctMaxOccurrencePositionsFile : maxOccurrencePositionsFile;
+    printMaxOccurrencePositions(logFile);
     printMaxOccurrencePositions(console);
 }
 
@@ -225,7 +260,8 @@ void printMaxLastOccurrencePositions(const char *outFile) {
     printf("====================================================================\n");
     printf("Max Last Occurrence List:\n");
     for (int i = 1; i <= numPositions; i++) {
-        if (positionsLastMax[i].occurrenceCount > 0 && occurrenceCount[positionsLastMax[i].position] < validTotalPath[moveCounter]) {
+        if (positionsLastMax[i].occurrenceCount > 0
+            && occurrenceCount[positionsLastMax[i].position] < validTotalPath[moveCounter]) {
             printf("%d occurs: %d\n", positionsLastMax[i].position, positionsLastMax[i].occurrenceCount);
         }
     }
@@ -233,22 +269,27 @@ void printMaxLastOccurrencePositions(const char *outFile) {
     freopen(console, "w", stdout);
 }
 
-void checkMaxLastOccurrencePositions() {
+void checkMaxLastOccurrencePositions(bool distinctRequired) {
     for (int i = 1; i <= numPositions; i++) {
         positionsLastMax[i].position = i;
         positionsLastMax[i].occurrenceCount = lastOccurrenceCount[i];
     }
     sort(positionsLastMax + 1, positionsLastMax + numPositions + 1, positionsOccurrenceOrderByDesc);
-    printMaxLastOccurrencePositions(maxLastOccurrencePositionsFile);
+    const char *logFile = distinctRequired ? distinctMaxLastOccurrencePositionsFile : maxLastOccurrencePositionsFile;
+    printMaxLastOccurrencePositions(logFile);
     printMaxLastOccurrencePositions(console);
 }
 
 void massageStatistics() {
-    calculateOccurrenceCount();
-    calculateLastOccurrenceCount();
+    calculateOccurrenceCount(false);
+    calculateLastOccurrenceCount(false);
     checkAndPrintMustAppearPositions();
-    checkMaxOccurrencePositions();
-    checkMaxLastOccurrencePositions();
+    checkMaxOccurrencePositions(false);
+    checkMaxLastOccurrencePositions(false);
+    calculateOccurrenceCount(true);
+    calculateLastOccurrenceCount(true);
+    checkMaxOccurrencePositions(true);
+    checkMaxLastOccurrencePositions(true);
 }
 
 void filterPathContainSeizePositionInLastOccurrence(int position) {
@@ -257,7 +298,8 @@ void filterPathContainSeizePositionInLastOccurrence(int position) {
         int lastOccurrence = getLastPositionFromPath(moveCounter, i);
         enablePath[moveCounter][i] = (lastOccurrence != position);
     }
-    calculateValidTotalPath();
+    calculateValidTotalPath(false);
+    calculateValidTotalPath(true);
 }
 
 bool isBackHome() {
@@ -303,4 +345,5 @@ void logInvestigation() {
 
 void initialize() {
     memset(estimatedJackHome, 0, sizeof(estimatedJackHome));
+    memset(isDistinctPath, false, sizeof(isDistinctPath));
 }
