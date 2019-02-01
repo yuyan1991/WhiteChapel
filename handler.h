@@ -18,6 +18,7 @@ int validTotalPath[maxMoveCount];
 int validTotalDistinctPath[maxMoveCount];
 int occurrenceCount[numPositions + 1];
 int lastOccurrenceCount[numPositions + 1];
+int isMustAppearPositions[numPositions + 1];
 int mustAppearPositions[numPositions];
 int mustAppearPositionsCount;
 int estimatedJackHome[numPositions + 1];
@@ -181,10 +182,12 @@ void calculateLastOccurrenceCount(bool distinctRequired) {
 }
 
 void checkMustAppearPositions() {
+    memset(isMustAppearPositions, false, sizeof(isMustAppearPositions));
     mustAppearPositionsCount = 0;
     for (int i = 1; i <= numPositions; i++) {
         if (occurrenceCount[i] == validTotalPath[moveCounter]) {
             mustAppearPositions[mustAppearPositionsCount++] = i;
+            isMustAppearPositions[i] = true;
         }
     }
 }
@@ -236,7 +239,7 @@ void printMaxOccurrencePositions(const char *outFile) {
     printf("Max Occurrence List:\n");
     for (int i = 1; i <= numPositions; i++) {
         if (positionsMax[i].occurrenceCount > 0
-            && occurrenceCount[positionsMax[i].position] < validTotalPath[moveCounter]) {
+            && !isMustAppearPositions[positionsMax[i].position]) {
             printf("%d occurs: %d\n", positionsMax[i].position, positionsMax[i].occurrenceCount);
         }
     }
@@ -252,7 +255,6 @@ void checkMaxOccurrencePositions(bool distinctRequired) {
     sort(positionsMax + 1, positionsMax + numPositions + 1, positionsOccurrenceOrderByDesc);
     const char *logFile = distinctRequired ? distinctMaxOccurrencePositionsFile : maxOccurrencePositionsFile;
     printMaxOccurrencePositions(logFile);
-    printMaxOccurrencePositions(console);
 }
 
 void printMaxLastOccurrencePositions(const char *outFile) {
@@ -261,7 +263,7 @@ void printMaxLastOccurrencePositions(const char *outFile) {
     printf("Max Last Occurrence List:\n");
     for (int i = 1; i <= numPositions; i++) {
         if (positionsLastMax[i].occurrenceCount > 0
-            && occurrenceCount[positionsLastMax[i].position] < validTotalPath[moveCounter]) {
+            && !isMustAppearPositions[positionsLastMax[i].position]) {
             printf("%d occurs: %d\n", positionsLastMax[i].position, positionsLastMax[i].occurrenceCount);
         }
     }
@@ -277,7 +279,6 @@ void checkMaxLastOccurrencePositions(bool distinctRequired) {
     sort(positionsLastMax + 1, positionsLastMax + numPositions + 1, positionsOccurrenceOrderByDesc);
     const char *logFile = distinctRequired ? distinctMaxLastOccurrencePositionsFile : maxLastOccurrencePositionsFile;
     printMaxLastOccurrencePositions(logFile);
-    printMaxLastOccurrencePositions(console);
 }
 
 void massageStatistics() {
