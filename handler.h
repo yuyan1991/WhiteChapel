@@ -94,7 +94,7 @@ void calculateValidTotalPath(bool distinctRequired) {
     int cnt = 0;
     for (int i=0;i<totalPath[moveCounter];i++) {
         if (!enablePath[moveCounter][i]) continue;
-        if (distinctRequired && isDistinctPath[moveCounter][i]) continue;
+        if (distinctRequired && !isDistinctPath[moveCounter][i]) continue;
         cnt++;
     }
     if (distinctRequired) validTotalDistinctPath[moveCounter] = cnt; else validTotalPath[moveCounter] = cnt;
